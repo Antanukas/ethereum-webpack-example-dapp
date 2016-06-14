@@ -1,12 +1,11 @@
-/**
- * This file has 2 contracts: tokenRecipient and MyToken
- * and is reproduced directly from https://www.ethereum.org/token
- */
-contract tokenRecipient { 
-    function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData); 
-}
+import { tokenRecipient } from 'TokenRecipient.sol';
+import { Library } from 'Library.sol';
 
-contract MyToken { 
+contract MyToken {
+
+    using Library for Library.Data;
+    Library.Data data;
+
     /* Public variables of the token */
     string public name;
     string public symbol;
@@ -24,52 +23,53 @@ contract MyToken {
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
     function MyToken(
-        uint256 initialSupply, 
-        string tokenName, 
-        uint8 decimalUnits, 
-        string tokenSymbol, 
+        uint256 initialSupply,
+        string tokenName,
+        uint8 decimalUnits,
+        string tokenSymbol,
         string versionOfTheCode
         ) {
-        balanceOf[msg.sender] = initialSupply;              // Give the creator all initial tokens                    
+        balanceOf[msg.sender] = initialSupply;              // Give the creator all initial tokens
         totalSupply = initialSupply;                        // Update total supply
-        name = tokenName;                                   // Set the name for display purposes     
-        symbol = tokenSymbol;                               // Set the symbol for display purposes    
-        decimals = decimalUnits;                            // Amount of decimals for display purposes        
+        name = tokenName;                                   // Set the name for display purposes
+        symbol = tokenSymbol;                               // Set the symbol for display purposes
+        decimals = decimalUnits;                            // Amount of decimals for display purposes
         version = versionOfTheCode;
     }
 
     /* Send coins */
     function transfer(address _to, uint256 _value) {
-        if (balanceOf[msg.sender] < _value) throw;           // Check if the sender has enough   
+        data.setValue(5);
+        if (balanceOf[msg.sender] < _value) throw;           // Check if the sender has enough
         if (balanceOf[_to] + _value < balanceOf[_to]) throw; // Check for overflows
         balanceOf[msg.sender] -= _value;                     // Subtract from the sender
-        balanceOf[_to] += _value;                            // Add the same to the recipient            
+        balanceOf[_to] += _value;                            // Add the same to the recipient
         Transfer(msg.sender, _to, _value);                   // Notify anyone listening that this transfer took place
     }
 
     /* Allow another contract to spend some tokens in your behalf */
-    function approveAndCall(address _spender, uint256 _value, bytes _extraData) 
+    function approveAndCall(address _spender, uint256 _value, bytes _extraData)
         returns (bool success) {
-        allowance[msg.sender][_spender] = _value;     
+        allowance[msg.sender][_spender] = _value;
         tokenRecipient spender = tokenRecipient(_spender);
-        spender.receiveApproval(msg.sender, _value, this, _extraData); 
-        return true; 
+        spender.receiveApproval(msg.sender, _value, this, _extraData);
+        return true;
     }
 
     /* A contract attempts to get the coins */
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
-        if (balanceOf[_from] < _value) throw;                 // Check if the sender has enough   
+        if (balanceOf[_from] < _value) throw;                 // Check if the sender has enough
         if (balanceOf[_to] + _value < balanceOf[_to]) throw;  // Check for overflows
         if (spentAllowance[_from][msg.sender] + _value > allowance[_from][msg.sender]) throw;   // Check allowance
         balanceOf[_from] -= _value;                          // Subtract from the sender
-        balanceOf[_to] += _value;                            // Add the same to the recipient            
+        balanceOf[_to] += _value;                            // Add the same to the recipient
         spentAllowance[_from][msg.sender] += _value;
-        Transfer(_from, _to, _value); 
+        Transfer(_from, _to, _value);
         return true;
-    } 
+    }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
     function () {
         throw;     // Prevents accidental sending of ether
-    }        
-}     
+    }
+}
